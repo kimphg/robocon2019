@@ -266,7 +266,7 @@ void setup()
 }
 bool n0,n1;
 bool n0_old,n1_old;
-long long int encoder0Pos = 0,encoder1Pos = 0;
+long long int countEncoder0 = 0,countEncoder1 = 0;
 
 void readEncoder0()
 {
@@ -275,9 +275,9 @@ void readEncoder0()
     //Serial.println (n0);
     if ((n0_old == LOW) && (n0 == HIGH)) {
         if (digitalRead(ENCODER_0_B) == LOW) {
-            encoder0Pos--;
+            countEncoder0--;
         } else {
-            encoder0Pos++;
+            countEncoder0++;
         }
         //Serial.print ("encoder0Pos:");
         //Serial.println (encoder0Pos);
@@ -290,20 +290,45 @@ void readEncoder1()
     //Serial.println (n1);
     if ((n1_old == LOW) && (n1 == HIGH)) {
         if (digitalRead(ENCODER_1_B) == LOW) {
-            encoder1Pos--;
+            countEncoder1--;
         } else {
-            encoder1Pos++;
+            countEncoder1++;
         }
         //Serial.print ("encoder1Pos:");
         //Serial.println (encoder1Pos);
     }
     n1_old = n1;
 }
+long long int distanceOld = 0;
+int angleOld = 0;
+void resetDistanceCount()
+{
+    distanceOld = (countEncoder0+countEncoder1)/2;
+}
+long long int getDistanceCount()
+{
+    return (countEncoder0+countEncoder1)/2-distanceOld;
+}
+void resetAngle()
+{
+    angleOld = (countEncoder1-countEncoder0);
+}
+int getAngle()
+{
+    return (countEncoder1-countEncoder0) - angleOld;
+}
 unsigned long oldMillis = 0;
 
 long long int oldEncoder0Pos =0,oldEncoder1Pos=0;
 
-#define UPDATE_TIME 50.0
+#define UPDATE_TIME 50.0 // time to update control in milisec
+void gotoStage(int st)
+{
+    stage = st;
+    SetMotion(0,0);
+    resetDistanceCount();
+    resetAngle();
+}
 void update()
 {
     readEncoder0();
@@ -313,19 +338,47 @@ void update()
     if(currentMillis-oldMillis>UPDATE_TIME)
     {
         oldMillis = currentMillis;
-        //
+        //control scenario
+        switch (stage)
+        {
+            case 0:
+                int distanceCount = getDistanceCount();
+                if(distanceCount<100)
+                {
+                    SetMotion((100.0-distanceCount)/100.0,0);
+                }
+                else
+                {
 
+                    gotoStage(1);
+                }
+                break;
+            case 1:
+            int angle = getAngle();
+            if(angle<50)
+            {
+                SetMotion((100.0-distanceCount)/100.0,0);
+            }
+            else
+            {
+
+                gotoStage(100);
+            }
+                break;
+            default:
+                break;
+        }
         // encoder speed
-        speedLeftEncoder  = (encoder0Pos-oldEncoder0Pos)/UPDATE_TIME;
-        speedRightEncoder = (encoder1Pos-oldEncoder1Pos)/UPDATE_TIME;
-        oldEncoder0Pos = encoder0Pos;
-        oldEncoder1Pos = encoder1Pos;
-        Serial.print("\nSpeed:");
-        Serial.print(speedLeftEncoder);
-        Serial.print(":");
-        Serial.print(speedRightEncoder);
-        Serial.print("\n");
-        if(millis()<2000)Move(1,1);
+        speedLeftEncoder  = (countEncoder0-oldEncoder0Pos)/UPDATE_TIME;
+        speedRightEncoder = (countEncoder1-oldEncoder1Pos)/UPDATE_TIME;
+        oldEncoder0Pos = countEncoder0;
+        oldEncoder1Pos = countEncoder1;
+//        Serial.print("\nSpeed:");
+//        Serial.print(speedLeftEncoder);
+//        Serial.print(":");
+//        Serial.print(speedRightEncoder);
+//        Serial.print("\n");
+        //if(millis()<2000)Move(1,1);
 
 
     }
@@ -347,7 +400,7 @@ void Robot_RUN()
         // }
     }
 }
-int stage;
+int stage = 0;
 void loop()
 {
 
