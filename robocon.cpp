@@ -5,13 +5,13 @@ const uint8_t LEFT_R_EN = 9;
 const uint8_t LEFT_L_PWM = 10;
 const uint8_t LEFT_R_PWM = 11;
 
-const uint8_t RIGHT_L_EN = 4;
-const uint8_t RIGHT_R_EN = 5;
-const uint8_t RIGHT_L_PWM = 6;
-const uint8_t RIGHT_R_PWM = 7;
+const uint8_t RIGHT_L_EN = 6;
+const uint8_t RIGHT_R_EN = 7;
+const uint8_t RIGHT_L_PWM = 12;
+const uint8_t RIGHT_R_PWM = 13;
 
 const uint8_t sensor_pin[8] = {22, 23, 24, 25, 26, 27, 28, 29};
-
+int stage = 0;
 //BTS7960 motorControllerRight(RIGHT_L_EN, RIGHT_R_EN, RIGHT_L_PWM, RIGHT_R_PWM);
 //BTS7960 motorControllerLeft(LEFT_L_EN, LEFT_R_EN, LEFT_L_PWM, LEFT_R_PWM);
 
@@ -60,7 +60,8 @@ float leftErrOld=0,rightErrOld=0;
 #define MOVE_D (40)
 void SetMotion(float sp,float dir)
 {
-    SetSpeeed(sp-dir,sp+dir);
+
+    SetSpeeed(sp+dir,sp-dir);
 }
 void SetSpeeed(double leftControl, double rightControl)
 {
@@ -74,11 +75,11 @@ void SetSpeeed(double leftControl, double rightControl)
     rightPower+=rightErr*MOVE_P+(rightErr-rightErrOld)*MOVE_D;
     if(abs(rightPower)>MAX_POWER)rightPower/=((abs(rightPower))/MAX_POWER);
     rightErrOld = rightErr;
-    //  Serial.print("Control:");
-    //  Serial.print(leftPower);
-    //  Serial.print(":");
-    //  Serial.print(rightPower);
-    //Serial.print("\n");
+    // Serial.print("Control:");
+    // Serial.print(leftPower);
+    // Serial.print(":");
+    // Serial.print(rightPower);
+    // Serial.print("\n");
     int power = abs(leftPower);
     analogWrite(LEFT_L_EN,power);
     analogWrite(LEFT_R_EN,power);
@@ -250,7 +251,7 @@ void setup()
     pinMode(RIGHT_L_EN, OUTPUT);
     pinMode(RIGHT_R_EN, OUTPUT);
     pinMode(RIGHT_L_PWM, OUTPUT);
-    pinMode(RIGHT_L_PWM, OUTPUT);
+    pinMode(RIGHT_R_PWM, OUTPUT);
 
     pinMode(sensor_pin[0], INPUT);
     pinMode(sensor_pin[1], INPUT);
@@ -315,7 +316,7 @@ void resetAngle()
 }
 int getAngle()
 {
-    return (countEncoder1-countEncoder0) - angleOld;
+    return (countEncoder0-countEncoder1) - angleOld;
 }
 unsigned long oldMillis = 0;
 
@@ -329,7 +330,37 @@ void gotoStage(int st)
     resetDistanceCount();
     resetAngle();
 }
-void update()
+int dstLeft=0, angleLeft=0;
+int dstLeftOld=0, angleLeftOld=0;
+bool gotoDst(int dst,int dstAngle)
+{
+    int angle = getAngle();
+    int distanceCount = getDistanceCount();
+    dstLeft = dst-distanceCount;
+    angleLeft = dstAngle-angle;
+    float sp = dstLeft/1000.0;
+    float angleSp = angleLeft/1000.0;
+    SetMotion(sp,angleSp);
+    if((abs(dstLeft-dstLeftOld)<10)&&(abs(dstLeft)<50))
+    {
+      if((abs(angleLeftOld-angleLeft)<10)&&(abs(angleLeft)<50))
+    {
+      Serial.println("end");
+      Serial.println(dstLeft);
+      Serial.println(angleLeft);
+      return true;
+    }
+    }
+    Serial.println("move");
+    Serial.println(stage);
+     Serial.println(dstLeft);
+      Serial.println(angleLeft);
+    //Serial.print(angleLeft);
+    dstLeftOld = dstLeft;
+    angleLeftOld = angleLeft;
+    return false;
+}
+void updateRobot()
 {
     readEncoder0();
     readEncoder1();
@@ -339,45 +370,38 @@ void update()
     {
         oldMillis = currentMillis;
         //control scenario
-        switch (stage)
+
+        if(stage==0)
         {
-            case 0:
-                int distanceCount = getDistanceCount();
-                if(distanceCount<100)
-                {
-                    SetMotion((100.0-distanceCount)/100.0,0);
-                }
-                else
-                {
+            if(gotoDst(200,0))gotoStage(1);
 
-                    gotoStage(1);
-                }
-                break;
-            case 1:
-            int angle = getAngle();
-            if(angle<50)
-            {
-                SetMotion((100.0-distanceCount)/100.0,0);
-            }
-            else
-            {
+        }
+         else   if(stage==1)
+        {
 
-                gotoStage(100);
-            }
-                break;
-            default:
-                break;
+            if(gotoDst(-200,0))gotoStage(2);
+
+        }
+         else   if(stage==2)
+        {
+
+            if(gotoDst(0,200))gotoStage(3);
+
+        }
+        else
+        {
+          (gotoDst(0,00));
         }
         // encoder speed
         speedLeftEncoder  = (countEncoder0-oldEncoder0Pos)/UPDATE_TIME;
         speedRightEncoder = (countEncoder1-oldEncoder1Pos)/UPDATE_TIME;
         oldEncoder0Pos = countEncoder0;
         oldEncoder1Pos = countEncoder1;
-//        Serial.print("\nSpeed:");
-//        Serial.print(speedLeftEncoder);
-//        Serial.print(":");
-//        Serial.print(speedRightEncoder);
-//        Serial.print("\n");
+        //Serial.print("\nSpeed:");
+        //Serial.print(speedLeftEncoder);
+        //Serial.print(":");
+        //Serial.print(speedRightEncoder);
+        //Serial.print("\n");
         //if(millis()<2000)Move(1,1);
 
 
@@ -400,11 +424,11 @@ void Robot_RUN()
         // }
     }
 }
-int stage = 0;
+
 void loop()
 {
 
-    update();
+    updateRobot();
 
 
 }
