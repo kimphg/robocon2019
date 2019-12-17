@@ -343,18 +343,18 @@ bool gotoDst(int dst,int dstAngle)
     SetMotion(sp,angleSp);
     if((abs(dstLeft-dstLeftOld)<10)&&(abs(dstLeft)<50))
     {
-      if((abs(angleLeftOld-angleLeft)<10)&&(abs(angleLeft)<50))
-    {
-      Serial.println("end");
-      Serial.println(dstLeft);
-      Serial.println(angleLeft);
-      return true;
-    }
+        if((abs(angleLeftOld-angleLeft)<10)&&(abs(angleLeft)<50))
+        {
+            Serial.println("end");
+            Serial.println(dstLeft);
+            Serial.println(angleLeft);
+            return true;
+        }
     }
     Serial.println("move");
     Serial.println(stage);
-     Serial.println(dstLeft);
-      Serial.println(angleLeft);
+    Serial.println(dstLeft);
+    Serial.println(angleLeft);
     //Serial.print(angleLeft);
     dstLeftOld = dstLeft;
     angleLeftOld = angleLeft;
@@ -376,13 +376,13 @@ void updateRobot()
             if(gotoDst(200,0))gotoStage(1);
 
         }
-         else   if(stage==1)
+        else   if(stage==1)
         {
 
             if(gotoDst(-200,0))gotoStage(2);
 
         }
-         else   if(stage==2)
+        else   if(stage==2)
         {
 
             if(gotoDst(0,200))gotoStage(3);
@@ -390,7 +390,7 @@ void updateRobot()
         }
         else
         {
-          (gotoDst(0,00));
+            (gotoDst(0,00));
         }
         // encoder speed
         speedLeftEncoder  = (countEncoder0-oldEncoder0Pos)/UPDATE_TIME;
