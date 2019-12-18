@@ -1,5 +1,7 @@
 {
     "programmer": "AVRISP mkII",
     "board": "arduino:avr:mega",
-    "configuration": "cpu=atmega2560"
+    "configuration": "cpu=atmega2560",
+    "port": "COM5",
+    "sketch": "robocon2019.ino"
 }

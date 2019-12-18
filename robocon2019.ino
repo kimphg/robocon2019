@@ -1,6 +1,6 @@
 
-#define MAX_POWER_TIEN 120.0
-#define MAX_POWER_LUI 120.0
+#define MAX_POWER_TIEN 120
+#define MAX_POWER_LUI 120
 #define SIDE_COMPENSATION 1.0
 float leftErrOld = 0, rightErrOld = 0;
 #define MOVE_P_TIEN 6
@@ -80,18 +80,18 @@ void SetMotion(float sp, float dir)
 
   SetSpeeed(sp + dir, sp - dir);
 }
-float sumLeftError = 0,sumRightError;
+
 void SetSpeeed(double leftControl, double rightControl)
 {
   //
   float leftErr = (leftControl - speedLeftEncoder);
-  leftPower = leftErr * p_value + (leftErr - leftErrOld) * d_value;
+  leftPower += leftErr * p_value + (leftErr - leftErrOld) * d_value;
   if (abs(leftPower) > max_power)
     leftPower /= ((abs(leftPower)) / max_power);
   leftErrOld = leftErr;
   //
   float rightErr = (rightControl - speedRightEncoder);
-  rightPower = (rightErr * p_value + (rightErr - rightErrOld) * d_value)*SIDE_COMPENSATION;
+  rightPower += (rightErr * p_value + (rightErr - rightErrOld) * d_value)* SIDE_COMPENSATION;
   if (abs(rightPower) > max_power)
     rightPower /= ((abs(rightPower)) / max_power);
   rightErrOld = rightErr;
@@ -128,7 +128,7 @@ void SetSpeeed(double leftControl, double rightControl)
 
 void calculate_Error()
 {
-  double temp1 = 0, temp2 = 0;
+  double temp1 = 0, temp2 = 0, temp =0;
   sensor[0] = digitalRead(sensor_pin[0]);
   sensor[1] = digitalRead(sensor_pin[1]);
   sensor[2] = digitalRead(sensor_pin[2]);
@@ -138,32 +138,42 @@ void calculate_Error()
   sensor[6] = digitalRead(sensor_pin[6]);
   sensor[7] = digitalRead(sensor_pin[7]);
 
+  int val[8] = {3,2,1,0,0,-1,-2,-3};
+
   for (int i = 0; i < 8; i++)
   {
     if (sensor[i] == 1)
       sensor[i] = 0;
     else
       sensor[i] = 1;
-    temp1 += i * sensor[i];
+    temp1 += val[i] * sensor[i];
     temp2 += sensor[i];
   }
 
-  count = temp2; //Tổng số led bắt được đường line
-  if (count == 0)
-  {
-    if (Error <= -3.5)
-    {
-      Error = -4;
-    }
-    else if (Error >= 3.5)
-    {
-      Error = 4;
-    }
-    else
-      Error = 0;
-  }
-  else
-    Error = double((temp1 / temp2) - 3.5) * esp; // Tính sai số
+  // count = temp2; //Tổng số led bắt được đường line
+  // if (count == 0)
+  // {
+  //   if (Error <= -3.5)
+  //   {
+  //     Error = -4;
+  //   }
+  //   else if (Error >= 3.5)
+  //   {
+  //     Error = 4;
+  //   }
+  //   else
+  //     Error = 0;
+  // }
+  // else
+  //   Error = double((temp1 / temp2) - 3.5) * esp; // Tính sai số
+  if( temp1 < 0 )
+    Error = - atan ( abs(temp1) / 7) / 3.14 * 180;
+  else if( temp1 >=0 )
+    Error = atan ( abs(temp1) / 7) / 3.14 * 180;
+
+
+  Serial.println("Error");
+  Serial.print(Error);
 
   if (count >= 4 && temp_count < 4)
   {
@@ -189,6 +199,7 @@ void PID_compute()
 
   for (int i = 0; i < 8; i++)
   {
+
     sum_last_8_error += last_8_Error[i];
   }
   sum_last_8_error = sum_last_8_error / 8;
@@ -309,13 +320,20 @@ int dstLeft = 0, angleLeft = 0;
 int dstLeftOld = 0, angleLeftOld = 0;
 bool gotoDst(int dst, int dstAngle)
 {
+  //
+  calculate_Error();
+  //
   int angle = getAngle();
   int distanceCount = getDistanceCount();
   dstLeft = dst - distanceCount;
   angleLeft = dstAngle - angle;
   float sp = dstLeft / 1000.0;
   float angleSp = angleLeft / 1000.0;
-  SetMotion(sp, angleSp);
+  if(dst != 0)
+    SetMotion(sp, -Error/15.0);///
+  else {
+    SetMotion(sp,angleSp);
+  }
   if ((abs(dstLeft - dstLeftOld) < 10) && (abs(dstLeft) < 50))
   {
     if ((abs(angleLeftOld - angleLeft) < 10) && (abs(angleLeft) < 50))
@@ -360,14 +378,14 @@ bool turnRight90()
     p_value = MOVE_P_PHAI;
     d_value = MOVE_D_PHAI;
     max_power = MAX_POWER_TIEN;
-    return gotoDst(0, -585);
+    return gotoDst(0, 585);
 }
 bool turnLeft90()
 {
     p_value = MOVE_P_TRAI;
     d_value = MOVE_I_TRAI;
     max_power = MAX_POWER_TIEN;
-    return gotoDst(0, 585);
+    return gotoDst(0, -585);
 }
 void updateRobot()
 {
@@ -384,23 +402,23 @@ void updateRobot()
     {
       // quay phai 90 do: 585
       Serial.println(stage);
-      if (turnRight90())
+      if (goStraight(1200))
         gotoStage(1);
       // (gotoDst(0, 00));
     }
-    // else if (stage == 1)
-    // {
+    else if (stage == 1)
+    {
 
-    //   dst_value = -1000;
-    //   if (gotoDst(dst_value, 0))
-    //     gotoStage(2);
-    // }
-    // else if (stage == 2)
-    // {
+      dst_value = -1000;
+      if (turnRight90())
+        gotoStage(2);
+    }
+    else if (stage == 2)
+    {
 
-    //   if (gotoDst(0, 200))
-    //     gotoStage(3);
-    // }
+      if (goStraight(500))
+        gotoStage(3);
+    }
     else
     {
       // if (gotoDst(0, 00))
