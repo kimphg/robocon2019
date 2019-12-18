@@ -80,18 +80,18 @@ void SetMotion(float sp, float dir)
 
   SetSpeeed(sp + dir, sp - dir);
 }
-
+float sumLeftError = 0,sumRightError;
 void SetSpeeed(double leftControl, double rightControl)
 {
   //
   float leftErr = (leftControl - speedLeftEncoder);
-  leftPower += leftErr * p_value + (leftErr - leftErrOld) * d_value;
+  leftPower = leftErr * p_value + (leftErr - leftErrOld) * d_value;
   if (abs(leftPower) > max_power)
     leftPower /= ((abs(leftPower)) / max_power);
   leftErrOld = leftErr;
   //
   float rightErr = (rightControl - speedRightEncoder);
-  rightPower += (rightErr * p_value + (rightErr - rightErrOld) * d_value)*SIDE_COMPENSATION;
+  rightPower = (rightErr * p_value + (rightErr - rightErrOld) * d_value)*SIDE_COMPENSATION;
   if (abs(rightPower) > max_power)
     rightPower /= ((abs(rightPower)) / max_power);
   rightErrOld = rightErr;
