@@ -9,13 +9,13 @@
 #define SIDE_COMPENSATION 1.0
 bool keep_center_line = true ;
 float leftErrOld = 0, rightErrOld = 0;
-#define MOVE_P_TIEN 6
+#define MOVE_P_TIEN 1000
 #define MOVE_I_TIEN 0
-#define MOVE_D_TIEN (141)
+#define MOVE_D_TIEN (0)
 // di thang (p:6,d:141)
-#define MOVE_P_LUI 6
-#define MOVE_I_LUI 0
-#define MOVE_D_LUI (140)
+#define MOVE_P_LUI MOVE_P_TIEN
+#define MOVE_I_LUI MOVE_I_TIEN
+#define MOVE_D_LUI MOVE_D_TIEN
 
 #define MOVE_P_PHAI 5
 #define MOVE_I_PHAI 0
@@ -81,7 +81,7 @@ void DemNga3()
         }
     }
 }
-int p_value,i_value, d_value, max_power = 90;
+float p_value,i_value, d_value, max_power = 90.0;
 const uint8_t sensor_pin[8] = {22, 23, 24, 25, 26, 27, 28, 29};
 int stage = 0;
 //BTS7960 motorControllerRight(RIGHT_L_EN, RIGHT_R_EN, RIGHT_L_PWM, RIGHT_R_PWM);
@@ -143,6 +143,7 @@ int leftErrArray[] = {0,0,0,0,0,0,0,0};
 int rightErrArray[] = {0,0,0,0,0,0,0,0};
 void SetSpeeed(double leftControl, double rightControl)
 {
+    
     if(bufferIndex<7)bufferIndex++;else bufferIndex=0;
     //
     int leftErr = (leftControl - speedLeftEncoder);
@@ -177,6 +178,12 @@ void SetSpeeed(double leftControl, double rightControl)
     if (abs(rightPower) > max_power)
         rightPower /= ((abs(rightPower)) / max_power);
     rightErrOld = rightErr;
+    //
+    Serial.print("\nspeed:");
+    Serial.print(leftPower);
+    Serial.print("  ");
+    Serial.print(rightPower);
+    //
 
     int power = abs(leftPower);
     analogWrite(LEFT_L_EN, power);
@@ -409,7 +416,7 @@ bool goStraight(int dst)
     float sp = dstLeft / 1000.0;
     //float angleSp = angleLeft / 2000.0;
 
-    if(keep_center_line)SetMotion(sp, - errorLineCenter / 15.0 );
+    if(keep_center_line)SetMotion(sp, - errorLineCenter / 5.0 );
     else SetMotion(sp,0);
 
     if ((abs(dstLeft - dstLeftOld) < 10) && (abs(dstLeft) < 50))
@@ -455,7 +462,7 @@ void updateRobot()
         if (stage == 0)
         {
             // quay phai 90 do: 585
-            if(goStraight(2500))gotoStage(10);
+            if(goStraight(400))gotoStage(10);
             if(lineLeft>1)max_power=20;
             if(lineLeft>2){max_power=10;gotoStage(1);}
             Serial.println(lineLeft);
