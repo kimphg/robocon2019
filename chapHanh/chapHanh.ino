@@ -5,16 +5,18 @@ int stepPin_0 = 4;
 int dirPin_0 = 5;
 int stepPin_1 = 51;
 int dirPin_1 = 50; 
-#define SERVO_PIN_L 7 // trên 
-#define SERVO_PIN_R 6 // dưới
-Servo gServo_L ;
-Servo gServo_R ;
+#define SERVO_PIN_L 3 // trên 
+#define SERVO_PIN_R 2 // dưới
+Servo gServo_Top ;
+Servo gServo_Bot ;
 #define HANH_TRINH_VAO 8
 #define HANH_TRINH_RA 9
+#define HANH_TRINH_LEN 10
+#define HANH_TRINH_XUONG 11
 #define RELAY1 22
 #define RELAY2 23
-#define RELAY3 24
-#define RELAY4 25
+#define RELAY3 25
+#define RELAY4 27
 unsigned long preTime =0;
 unsigned long currentMillis=0 , HieuTime=0;
 int stepCount_0=0;
@@ -24,8 +26,10 @@ int stepCount_1=0;
 //bool endStage_1 =false;
 bool x=0;
 bool sTop=0, stOp_1=0;
-void TINHTIENNGANG_VAO(int distance = 9000)
+void TINHTIENNGANG_VAO(int distance=8000)
 {
+  digitalWrite(RELAY2,LOW);
+  delay(200);
   digitalWrite(dirPin_0,LOW);
   for (int j=1;j<=distance;j++){
   if(digitalRead(HANH_TRINH_VAO))break;
@@ -36,87 +40,112 @@ void TINHTIENNGANG_VAO(int distance = 9000)
   delayMicroseconds(1100);
   if(digitalRead(HANH_TRINH_VAO))break;
   }
+  
+  digitalWrite(RELAY2,HIGH);
 }
-void TINHTIENNGANG_RA(int distance = 9000)
+void TINHTIENNGANG_RA(int distance=8000 )
 {
+  digitalWrite(RELAY2,LOW);
+  delay(200);
   digitalWrite(dirPin_0,HIGH);
   for (int j=1;j<distance;j++){
     if(digitalRead(HANH_TRINH_RA))break;
-  digitalWrite(stepPin_0,HIGH);
-  delayMicroseconds(1100);
-  if(digitalRead(HANH_TRINH_RA))break;
-  digitalWrite(stepPin_0,LOW);
-  delayMicroseconds(1100);
-  if(digitalRead(HANH_TRINH_RA))break;
+    digitalWrite(stepPin_0,HIGH);
+    delayMicroseconds(1100);
+    if(digitalRead(HANH_TRINH_RA))break;
+    digitalWrite(stepPin_0,LOW);
+    delayMicroseconds(1100);
+    if(digitalRead(HANH_TRINH_RA))break;
   }
+  digitalWrite(RELAY2,HIGH);
+  return;
 }
-void TINHTIENDOC_LEN()
+void TINHTIENDOC_LEN(int dst)
 {
+  digitalWrite(RELAY3,LOW);
+  delay(2000);
   digitalWrite(dirPin_1,HIGH);
-  for (int i=0;i<=200;i++){
-  digitalWrite(stepPin_1,HIGH);
-  delayMicroseconds(800);
-  digitalWrite(stepPin_1,LOW);
-  delayMicroseconds(800);}
+  for (int i=0;i<=dst;i++){
+    if(digitalRead(HANH_TRINH_LEN))break;
+    digitalWrite(stepPin_1,HIGH);
+    delayMicroseconds(500);
+    if(digitalRead(HANH_TRINH_LEN))break;
+    digitalWrite(stepPin_1,LOW);
+    delayMicroseconds(500);
+    }
+    
+    digitalWrite(RELAY3,HIGH);
 }
-void TINHTIENDOC_XUONG()
+void TINHTIENDOC_XUONG(int dst)
 {
+  digitalWrite(RELAY3,LOW);
+  delay(200);
   digitalWrite(dirPin_1,LOW);
-  for (int j=1;j<=35;j++)
-  {
-  for (int i=0;i<=200;i++)
-  {
-  digitalWrite(stepPin_1,HIGH);
-  delayMicroseconds(800);
-  digitalWrite(stepPin_1,LOW);
-  delayMicroseconds(800);
-  }
-  }
+  for (int i=0;i<=dst;i++){
+    if(digitalRead(HANH_TRINH_XUONG))break;
+    digitalWrite(stepPin_1,HIGH);
+    delayMicroseconds(500);
+    if(digitalRead(HANH_TRINH_XUONG))break;
+    digitalWrite(stepPin_1,LOW);
+    delayMicroseconds(500);
+    }
+    
+    digitalWrite(RELAY3,HIGH);
 }
 void THA_1_BONG()
 {
-    //delay(2000);
-    //gServo_L.write(180);
-    delay(2000);
-    gServo_R.write(120);
-    delay(2000);
-    //gServo_L.write(90);
-    //delay(2000);
-    gServo_R.write(40);
-    return ;
+  
+    digitalWrite(RELAY4,HIGH);
+    delay(1000);
+    gServo_Bot.write(0);
+    delay(1000);
+    gServo_Bot.write(0);
+    delay(1000);
+    gServo_Bot.write(40);
+    delay(1000);
+    gServo_Bot.write(40);
+    delay(1000);
+    digitalWrite(RELAY4,LOW);
 }
 void THA_QUA_2()
 {
-   delay(2000);
-   gServo_L.write(180);
-   delay(2000);
-   gServo_L.write(90);
-   delay(2000);
+  digitalWrite(RELAY4,HIGH);
+    delay(1000);
+   gServo_Top.write(130);
+   delay(1000);
+   gServo_Top.write(130);
+   delay(1000);
+   gServo_Top.write(0);
+   delay(1000);
+   gServo_Top.write(0);
+   digitalWrite(RELAY4,LOW);
   
 }
 void GAP()
 {
+   delay(2000);
+    gServo_Top.write(90);
     delay(2000);
-    gServo_L.write(90);
+    gServo_Bot.write(40);
     delay(2000);
-    gServo_R.write(40);
-    delay(2000);
-    gServo_L.write(180);
-    delay(2000);
-    gServo_R.write(120);
+    gServo_Top.write(180);
+    delay(0);
+    gServo_Bot.write(120);
     return ;
 }
 //================================================================
 void setup() {
   // Sets the two pins as Outputs
-  Serial.begin(115200);
+  Serial.begin(9600);
  
   pinMode(RELAY1,OUTPUT);digitalWrite(RELAY1,HIGH);
   pinMode(RELAY2,OUTPUT);digitalWrite(RELAY2,HIGH);
   pinMode(RELAY3,OUTPUT);digitalWrite(RELAY3,HIGH);
-  pinMode(RELAY4,OUTPUT);digitalWrite(RELAY4,HIGH);
+  pinMode(RELAY4,OUTPUT);digitalWrite(RELAY4,LOW);
   pinMode(HANH_TRINH_VAO,INPUT_PULLUP);
   pinMode(HANH_TRINH_RA,INPUT_PULLUP);
+  pinMode(HANH_TRINH_LEN,INPUT_PULLUP);
+  pinMode(HANH_TRINH_XUONG,INPUT_PULLUP);
   pinMode(stepPin_1,OUTPUT); 
   pinMode(dirPin_1,OUTPUT);
   pinMode(stepPin_0,OUTPUT); 
@@ -127,8 +156,8 @@ void setup() {
   digitalWrite(dirPin_1,LOW);
   digitalWrite(stepPin_1,LOW);
   
-  gServo_L.attach(SERVO_PIN_L,600,2300);
-  gServo_R.attach(SERVO_PIN_R,600,2300); 
+  gServo_Top.attach(SERVO_PIN_L);//,600,2300);
+  gServo_Bot.attach(SERVO_PIN_R);//,600,2300); 
   
   Serial2.begin(9600);
   Serial2.setTimeout(5);
@@ -139,10 +168,15 @@ void setup() {
   sCmd.addCommand("tinhtiendoclen",TINHTIENDOC_LEN);
   sCmd.addCommand("tinhtienngangra",TINHTIENNGANG_RA);
   sCmd.addCommand("tinhtiendocxuong",TINHTIENDOC_XUONG);*/
-  gServo_R.write(40);
-  gServo_L.write(90);
-  TINHTIENNGANG_VAO();
-  SUT();
+  gServo_Bot.write(40);
+  gServo_Top.write(0);
+  TINHTIENNGANG_VAO(9000);
+  //TINHTIENNGANG_VAO();
+
+  //SUT();
+  //THA_1_BONG();
+  //THA_QUA_2();
+
 }
 void SUT()
 {
@@ -152,8 +186,10 @@ void SUT()
  }
  int waitForCommand = 2;
 void loop() 
-{      
- digitalWrite(13,LOW);
+{   
+// TINHTIENNGANG_RA(2800);
+  //THA_1_BONG();
+//  THA_QUA_2();   
   if(Serial2.available()>0)
   {
     int command = Serial2.read();
@@ -161,28 +197,62 @@ void loop()
     {
       if(command==2)
       {
-      
-      digitalWrite(13,HIGH);
-      TINHTIENNGANG_RA(2800);
-      THA_1_BONG();
-      //TINHTIENNGANG_VAO();
-      Serial2.write(2);
-      Serial2.write(2);
-      digitalWrite(13,LOW);
-      waitForCommand = 3;
+        TINHTIENNGANG_RA(2800);
+        digitalWrite(13,HIGH);
+        THA_1_BONG();
+        digitalWrite(13,LOW);
+        TINHTIENNGANG_VAO(8000);
+        Serial2.write(2);
+        Serial2.write(2);
+        delay(200);
+        Serial2.write(2);
+        Serial2.write(2);
+        waitForCommand = 3;
+
+        delay(20000);
+        TINHTIENNGANG_RA(8000);
+        THA_QUA_2();
+        THA_1_BONG();
+         delay(15000);
+         SUT();
+                  delay(150000);
       }
-      else if(command==3)
+      else if (command==3)
+      {
+        TINHTIENNGANG_RA(2800);
+        digitalWrite(13,HIGH);
+        THA_1_BONG();
+        digitalWrite(13,LOW);
+        //TINHTIENNGANG_VAO(8000);
+        Serial2.write(2);
+        Serial2.write(2);
+        delay(200);
+        Serial2.write(2);
+        Serial2.write(2);
+        waitForCommand = 3;
+
+        delay(20000);
+        //TINHTIENNGANG_RA(8000);
+        THA_QUA_2();
+        THA_1_BONG();
+         delay(15000);
+         SUT();
+                  delay(150000);
+      }
+      else if(command==4)
       {
         
         THA_QUA_2();
         THA_1_BONG();
-        SUT();
         Serial2.write(3);
         waitForCommand = 4;
         }
+      else if (command==4)
+      {
+        SUT();
+        Serial2.write(4);
+        waitForCommand=5;
+      }
     }
   }
-       
-  
- 
 }

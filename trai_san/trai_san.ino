@@ -205,7 +205,7 @@ void calculate_Error()
     else
         Error = double((temp1 / temp2) - 3.5) * esp; // Tính sai số
 
-    if (count>=4||((count==4)&&((sensor[0]==1)||(sensor[7]==1))))
+    if (count>=4)
     {
         if(millis()-temp_count>500)
         {
@@ -424,7 +424,38 @@ void Robot_RUN()
   #endif
     //}
 }
-
+void rotate_90_right()
+{
+  motorControllerLeft.Enable();
+    motorControllerRight.Enable();
+    BASE_SPEED=60;
+    Move(0,0,0,0);
+    // while (sensor[3] == 0 || sensor[4] == 0 || sensor[5] == 0)
+    unsigned long times=millis();
+    while((millis()-times)<=1200){//lui
+        //Serial.print("\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
+        Move(0, 55, 60, 0);
+    }
+    times=millis();
+    while ((millis()-times)<=2400)
+    {
+        //Serial.print("\nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n");
+        Move(80, 0, 0, 10);
+        //calculate_Error();
+    }
+    Move(0,0,0,0);
+    //  delay(100000);
+    //  while (sensor[3] == 0)
+    //  {
+    //    Serial.print("\ncccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n");
+    //    Move(0, 20, 0, 30);
+    //    calculate_Error();
+    //  }
+    Move(40, 0, 0, 20);
+    delay(300);
+    //Move(0, 0, 0, 0);
+    //delay(300);
+  }
 void gotoStage(int newstage)
 {
     BASE_SPEED=70;
@@ -438,21 +469,21 @@ void UpdateRobot(){
     if(stage==0){
 
         
-        if(dem_line==3){
+        if(dem_line==1){
 
             BASE_SPEED=50;
         }
         //Serial.print(BASE_SPEED);
 
-        Serial.print("\n");
-        if (dem_line == 4)
+        //Serial.print("\n");
+        if (dem_line == 2)
         {
 
             Serial.print("\n---------------------------------------------------------\n");
             motorControllerRight.Disable();
             motorControllerLeft.Disable();
             delay(50);
-            rotate_90_left();
+            rotate_90_right();
             gotoStage(2);
         }
         else{
@@ -464,14 +495,11 @@ void UpdateRobot(){
     }
     else if(stage==2){
         
-        if(dem_line==11){
+        if(dem_line==6){
             Move(0,0,0,0);
             delay(500);
-            // Serial.println("tinhtienngangra 1");
-            //Serial.println("tha_1_bong 1");
-            Serial2.write(2);
-            Serial2.write(2);
-            delay(15000);
+            rotate_90_right();
+            
             gotoStage(3);
             //dem_line=0;
             
@@ -495,42 +523,41 @@ void UpdateRobot(){
     }
     else if(stage==3)
     {
-        BASE_SPEED=40;
-        if(dem_line==14){
-          delay(500);
-            Move(0,0,0,0);
-            delay(1000);
-            digitalWrite(13,LOW);
-            // Serial.println("tinhtienngangra 1");
-            //Serial.println("tha_1_bong 1");
-            Serial2.write(3);
-            Serial2.write(3);
-            delay(15000);
-            gotoStage(4);
-        }
-        
+      if(dem_line==8){
+    
+        BASE_SPEED=50;
+        rotate_90_left();
+        gotoStage(4);
+      }
         calculate_Error();
         Robot_RUN();
         Action_Forward();
     }
-    
     else if(stage==4)
     {
-        BASE_SPEED=50;
-        if(dem_line<=17){
-          delay(500);
-            Move(0,0,0,0);
-            delay(1000);
-            digitalWrite(13,LOW);
-            // Serial.println("tinhtienngangra 1");
-            //Serial.println("tha_1_bong 1");
-            Serial2.write(3);
-            Serial2.write(3);
-            delay(150000);
+      if(dem_line==10){
+        Move(0,0,0,0);
+            delay(500);
             
-        }
-        
-        calculate_Error();
+            Serial2.write(3);
+            Serial2.write(3);
+            delay(15000);
+            gotoStage(5);
+      }
+      calculate_Error();
+        Robot_RUN();
+        Action_Forward();
+    }else if(stage==5)
+    {
+      if(dem_line==11){
+        Move(0,0,0,0);
+            delay(500);
+            Serial2.write(3);
+            Serial2.write(3);
+            delay(200000);
+            gotoStage(5);
+      }
+      calculate_Error();
         Robot_RUN();
         Action_Forward();
     }
